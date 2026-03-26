@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache
+# ⚠️ مهم: تجاهل كاش npm لتفادي خطأ EBUSY في Railway
+node_modules/.cache/
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+
+# Testing
+coverage/
+
+# Prisma
+*.db
+*.db-journal
+
+# Misc
+.vercel/
+.railway/

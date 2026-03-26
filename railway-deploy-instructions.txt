@@ -1,0 +1,30 @@
+📦 RAILWAY DEPLOYMENT INSTRUCTIONS
+=====================================
+
+1. اذهب إلى: https://railway.app/dashboard
+
+2. افتح مشروع "matjr" 
+
+3. انقر على "Variables" في القائمة الجانبية
+
+4. انسخ كل المتغيرات من ملف railway-env.txt وضعها هناك
+
+5. انقر على "Deploy" tab
+
+6. تأكد أن المشروع مربوط بـ GitHub repo: ra7baa1-eng/ra7ba
+
+7. انقر على "Deploy from GitHub"
+
+8. اختر Branch: master
+
+9. Railway سيبدأ البناء تلقائياً
+
+✅ البناء يجب أن يستخدم:
+- nixpacks.toml للتكوين
+- Prisma migrations ستعمل تلقائياً
+- سيستمع على PORT 10000
+
+🔗 URLS:
+- Backend: https://matjr.railway.app
+- Frontend: https://frontend-as21009e1-ra7bas-projects.vercel.app
+- GitHub: https://github.com/ra7baa1-eng/ra7ba

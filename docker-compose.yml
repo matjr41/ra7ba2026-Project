@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: rahba-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rahba
+      POSTGRES_PASSWORD: rahba_password
+      POSTGRES_DB: rahba
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rahba-network
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rahba-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://rahba:rahba_password@postgres:5432/rahba?schema=public
+      JWT_SECRET: your-jwt-secret-change-in-production
+      JWT_REFRESH_SECRET: your-refresh-secret-change-in-production
+      PORT: 3001
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    networks:
+      - rahba-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        npm run start:prod
+      "
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rahba-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3001/api
+      NEXT_PUBLIC_APP_DOMAIN: localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - rahba-network
+
+volumes:
+  postgres_data:
+
+networks:
+  rahba-network:
+    driver: bridge

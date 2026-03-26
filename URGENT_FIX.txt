@@ -1,0 +1,43 @@
+==========================================
+⚠️ URGENT FIX - Railway Backend Not Starting
+==========================================
+
+PROBLEM:
+--------
+Backend crashes with "connection refused" because:
+1. Start command runs migrations TWICE (causing hang/crash)
+2. Backend never fully starts, so Railway can't connect
+
+SOLUTION:
+---------
+Go to Railway Dashboard → Backend Service → Settings → Deploy
+
+Change Start Command from:
+❌ npx prisma migrate deploy && npm run start:railway:migrate
+
+To:
+✅ npx prisma migrate deploy && npm run start:railway
+
+EXPLANATION:
+------------
+- start:railway:migrate runs migrations AGAIN (double migration = crash)
+- start:railway just starts the server (correct)
+- Migrations should only run ONCE in the start command
+
+AFTER CHANGING:
+---------------
+1. Click "Redeploy" in Railway
+2. Wait 2-3 minutes for build + start
+3. Check logs - you should see:
+   ✅ Database connected successfully
+   🚀 Rahba Backend is running!
+
+ALTERNATIVE (if still failing):
+-------------------------------
+If DATABASE_URL is wrong, check Railway → PostgreSQL → Variables
+Copy the DATABASE_URL and paste it in Backend → Variables
+
+Expected format:
+postgresql://postgres:password@postgres.railway.internal:5432/railway
+
+==========================================

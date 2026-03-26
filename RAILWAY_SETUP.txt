@@ -1,0 +1,64 @@
+==========================================
+RAILWAY DEPLOYMENT CONFIGURATION
+==========================================
+
+Backend Service Settings:
+--------------------------
+
+Build Command:
+(leave empty - Dockerfile handles everything)
+
+Start Command:
+(leave empty - Dockerfile handles everything)
+
+Root Directory:
+backend
+
+IMPORTANT: Railway will use Dockerfile automatically.
+Do NOT set custom Build or Start commands!
+
+Environment Variables:
+----------------------
+DATABASE_URL=${{DATABASE_URL}}
+NODE_ENV=production
+JWT_SECRET=ra7ba-super-secret-jwt-key-2024
+JWT_REFRESH_SECRET=ra7ba-super-secret-refresh-key-2024
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+ADMIN_EMAIL=ra7baa1@gmail.com
+ADMIN_PASSWORD=abdo@154122
+AUTO_MIGRATE_ON_BOOT=false
+DB_SKIP_CONNECT_ON_BOOT=false
+
+IMPORTANT NOTES:
+----------------
+1. DATABASE_URL should be automatically set by Railway PostgreSQL plugin
+   Format: postgresql://postgres:password@host:5432/railway
+   
+2. If using Railway's internal network, use RAILWAY_PRIVATE_DOMAIN:
+   DATABASE_URL=postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}
+   
+3. Make sure PostgreSQL service is linked to backend service in Railway
+
+Health Check:
+-------------
+Path: /health
+Port: 8080
+
+==========================================
+Frontend (Vercel) Settings:
+==========================================
+
+Build Command:
+npm install && npm run build
+
+Output Directory:
+.next
+
+Environment Variables:
+----------------------
+NEXT_PUBLIC_API_URL=https://ra7ba-production.up.railway.app/api
+NEXT_PUBLIC_APP_NAME=Rahba
+NEXT_PUBLIC_APP_DOMAIN=ra7ba.vercel.app
+
+==========================================

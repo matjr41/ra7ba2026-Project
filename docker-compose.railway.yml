@@ -1,0 +1,48 @@
+# docker-compose.yml for Railway deployment (Backend only)
+
+version: '3.8'
+
+services:
+  rahba-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rahba-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-10000}:10000"
+    environment:
+      # Database
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      # Auth
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      # Clerk
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      # Email
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      # File Upload
+      - IMGBB_API_KEY=${IMGBB_API_KEY}
+      # Payment
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      # Supabase
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # App
+      - NODE_ENV=production
+      - PORT=${PORT:-10000}
+      - HOSTNAME=0.0.0.0
+    networks:
+      - rahba-network
+
+networks:
+  rahba-network:
+    driver: bridge

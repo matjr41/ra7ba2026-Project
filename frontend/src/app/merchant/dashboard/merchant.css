@@ -1,0 +1,143 @@
+/* تنسيقات عامة */
+.merchant-dashboard {
+  direction: rtl;
+  font-family: 'Tajawal', sans-serif;
+}
+
+/* تنسيق البطاقات */
+.dashboard-card {
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* تنسيق الأزرار */
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+/* تنسيق الجداول */
+.dashboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-table th {
+  background-color: #f9fafb;
+  padding: 0.75rem 1rem;
+  text-align: right;
+  font-weight: 600;
+  color: #4b5563;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dashboard-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+/* تنسيق علامات التبويب */
+.tab-button {
+  position: relative;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.tab-button.active {
+  color: #3b82f6;
+}
+
+.tab-button.active:after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background-color: #3b82f6;
+}
+
+/* تنسيق حالة الطلبات */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* تنسيق النماذج */
+.form-input {
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* تنسيق الألوان */
+:root {
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary: #6b7280;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --light: #f9fafb;
+  --dark: #111827;
+}
+
+/* تنسيق متجاوب */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-sidebar {
+    width: 100%;
+    position: static;
+    height: auto;
+  }
+  
+  .dashboard-content {
+    margin-right: 0;
+    padding: 1rem;
+  }
+}
