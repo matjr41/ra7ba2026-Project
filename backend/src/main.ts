@@ -27,13 +27,24 @@ async function bootstrap() {
   app.use(express.json({ limit: '20mb' }));
   app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
-  // CORS - Allow all origins for now (temporary fix)
-  app.enableCors({
-    origin: true, // Allow all origins temporarily
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
-  });
+// CORS - Production-safe: only allow known origins
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://ra7ba.shop,https://www.ra7ba.shop')
+  .split(',')
+  .map((o: string) => o.trim())
+  .filter(Boolean);
+
+app.enableCors({
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('CORS: origin not allowed'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+});
 
   // Global validation pipe
   app.useGlobalPipes(
