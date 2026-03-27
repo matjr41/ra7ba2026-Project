@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['localhost', 'i.ibb.co', 'ibb.co'],
+    domains: ['localhost', 'i.ibb.co', 'ibb.co', 'ra7ba-backend-9tyo.onrender.com'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -28,12 +28,20 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'www.gravatar.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ra7ba-backend-9tyo.onrender.com',
+      },
     ],
   },
   async rewrites() {
     const raw = process.env.NEXT_PUBLIC_API_URL;
     const invalid = !raw || raw === 'undefined' || raw === 'null' || raw.trim() === '' || /your-backend/i.test(raw) || /localhost/i.test(raw) || /127\.0\.0\.1/i.test(raw);
-    const apiUrl = invalid ? 'https://ra7ba-backend.onrender.com/api' : raw;
+    const apiUrl = invalid ? 'https://ra7ba-backend-9tyo.onrender.com/api' : raw;
 
     console.log('✅ API rewrites enabled for:', apiUrl);
     return [
