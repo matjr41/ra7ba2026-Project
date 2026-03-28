@@ -3,252 +3,250 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
-import { Store, Search, Filter, Eye, Ban, CheckCircle, AlertCircle } from 'lucide-react';
+import { Store, Search, Filter, Eye, Ban, CheckCircle, ToggleLeft, ToggleRight, Loader2, X } from 'lucide-react';
 
 export default function AdminMerchantsPage() {
   const [loading, setLoading] = useState(true);
   const [merchants, setMerchants] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadMerchants();
-  }, [statusFilter]);
+  // Suspend modal
+  const [suspendModal, setSuspendModal] = useState<{ id: string; name: string } | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
+
+  useEffect(() => { loadMerchants(); }, [statusFilter]);
 
   const loadMerchants = async () => {
     try {
       setLoading(true);
-      const { data } = await adminApi.getTenants(1, 50, statusFilter || undefined);
+      const { data } = await adminApi.getTenants(1, 100, statusFilter || undefined);
       setMerchants(data?.data || []);
-    } catch (error) {
-      console.error('Error loading merchants:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch { } finally { setLoading(false); }
   };
 
-  const handleSuspend = async (tenantId: string) => {
-    const reason = prompt('سبب الإيقاف:');
-    if (!reason) return;
-
+  const handleSuspend = async () => {
+    if (!suspendModal || !suspendReason.trim()) return;
     try {
-      await adminApi.suspendTenant(tenantId, reason);
-      alert('تم إيقاف المتجر بنجاح');
+      setActionLoading(suspendModal.id);
+      await adminApi.suspendTenant(suspendModal.id, suspendReason);
+      setSuspendModal(null);
+      setSuspendReason('');
       loadMerchants();
-    } catch (error) {
-      alert('حدث خطأ في الإيقاف');
-    }
+    } catch { alert('حدث خطأ'); }
+    finally { setActionLoading(null); }
   };
 
-  const handleActivate = async (tenantId: string) => {
-    if (!confirm('هل تريد تفعيل هذا المتجر؟')) return;
-
+  const handleActivate = async (id: string) => {
     try {
-      await adminApi.activateTenant(tenantId);
-      alert('تم تفعيل المتجر بنجاح');
+      setActionLoading(id);
+      await adminApi.activateTenant(id);
       loadMerchants();
-    } catch (error) {
-      alert('حدث خطأ في التفعيل');
-    }
+    } catch { alert('حدث خطأ'); }
+    finally { setActionLoading(null); }
   };
 
-  const filteredMerchants = merchants.filter(merchant =>
-    merchant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    merchant.subdomain?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    merchant.owner?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = merchants.filter(m =>
+    (m.nameAr || m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.subdomain?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.owner?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري تحميل المتاجر...</p>
-        </div>
-      </div>
-    );
-  }
+  const stats = {
+    total: merchants.length,
+    active: merchants.filter(m => m.status === 'ACTIVE').length,
+    trial: merchants.filter(m => m.status === 'TRIAL').length,
+    suspended: merchants.filter(m => m.status === 'SUSPENDED').length,
+  };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="p-6 max-w-7xl mx-auto" dir="rtl">
+
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Store className="h-8 w-8 text-blue-600" />
+        <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center">
+            <Store className="w-5 h-5 text-blue-600" />
+          </div>
           إدارة المتاجر
         </h1>
-        <p className="text-gray-600 mt-2">عرض وإدارة جميع المتاجر المسجلة في المنصة</p>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <input
-              type="text"
-              placeholder="بحث بالاسم، النطاق، أو البريد الإلكتروني..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div className="relative">
-            <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">جميع الحالات</option>
-              <option value="ACTIVE">نشط</option>
-              <option value="TRIAL">تجريبي</option>
-              <option value="SUSPENDED">موقوف</option>
-              <option value="EXPIRED">منتهي</option>
-            </select>
-          </div>
-        </div>
+        <p className="text-gray-500 mt-1 text-sm">تفعيل وإيقاف المتاجر والإشراف عليها</p>
       </div>
 
       {/* Stats */}
-      <div className="grid md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">إجمالي المتاجر</p>
-          <p className="text-2xl font-bold text-gray-900">{merchants.length}</p>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'الكل', value: stats.total, color: 'text-gray-900', bg: 'bg-gray-50' },
+          { label: 'نشط', value: stats.active, color: 'text-green-700', bg: 'bg-green-50' },
+          { label: 'تجريبي', value: stats.trial, color: 'text-blue-700', bg: 'bg-blue-50' },
+          { label: 'موقوف', value: stats.suspended, color: 'text-red-700', bg: 'bg-red-50' },
+        ].map(s => (
+          <div key={s.label} className={`${s.bg} rounded-2xl p-4 text-center`}>
+            <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-sm p-4 mb-5 flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            placeholder="بحث بالاسم أو النطاق أو البريد..."
+            className="w-full pr-9 pl-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">نشط</p>
-          <p className="text-2xl font-bold text-green-600">
-            {merchants.filter(m => m.status === 'ACTIVE').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">تجريبي</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {merchants.filter(m => m.status === 'TRIAL').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">موقوف</p>
-          <p className="text-2xl font-bold text-red-600">
-            {merchants.filter(m => m.status === 'SUSPENDED').length}
-          </p>
+        <div className="relative">
+          <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="pr-9 pl-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white">
+            <option value="">جميع الحالات</option>
+            <option value="ACTIVE">نشط</option>
+            <option value="TRIAL">تجريبي</option>
+            <option value="SUSPENDED">موقوف</option>
+          </select>
         </div>
       </div>
 
-      {/* Merchants Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  المتجر
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  المالك
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الحالة
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الاشتراك
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  تاريخ التسجيل
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  إجراءات
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredMerchants.length === 0 ? (
+      {/* Table */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="py-16 flex items-center justify-center gap-3 text-gray-400">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span>جاري التحميل...</span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-gray-400">
+            <Store className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>لا توجد متاجر</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    لا توجد متاجر مطابقة للبحث
-                  </td>
+                  {['المتجر', 'المالك', 'الحالة', 'الاشتراك', 'تاريخ التسجيل', 'التحكم'].map(h => (
+                    <th key={h} className="px-5 py-3.5 text-right text-xs font-bold text-gray-500 uppercase">{h}</th>
+                  ))}
                 </tr>
-              ) : (
-                filteredMerchants.map((merchant) => (
-                  <tr key={merchant.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Store className="h-5 w-5 text-blue-600" />
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map(m => {
+                  const isActive = m.status === 'ACTIVE' || m.status === 'TRIAL';
+                  const isSuspended = m.status === 'SUSPENDED';
+                  const isLoading = actionLoading === m.id;
+                  return (
+                    <tr key={m.id} className="hover:bg-gray-50/50 transition">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          {m.logo ? (
+                            <img src={m.logo} alt="" className="w-9 h-9 rounded-xl object-cover" onError={e => (e.currentTarget.style.display='none')} />
+                          ) : (
+                            <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold text-sm">
+                              {(m.nameAr || m.name || '?').charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-bold text-gray-900 text-sm">{m.nameAr || m.name}</p>
+                            <a href={`/store/${m.subdomain}`} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-blue-500 hover:underline">{m.subdomain}.ra7ba.shop</a>
+                          </div>
                         </div>
-                        <div className="mr-4">
-                          <div className="text-sm font-medium text-gray-900">{merchant.name}</div>
-                          <div className="text-sm text-gray-500">{merchant.subdomain}.rahba.com</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="text-sm text-gray-800">{m.owner?.name || '—'}</p>
+                        <p className="text-xs text-gray-400">{m.owner?.email || '—'}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                          m.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                          m.status === 'TRIAL' ? 'bg-blue-100 text-blue-700' :
+                          m.status === 'SUSPENDED' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {m.status === 'ACTIVE' && '● نشط'}
+                          {m.status === 'TRIAL' && '● تجريبي'}
+                          {m.status === 'SUSPENDED' && '● موقوف'}
+                          {m.status === 'EXPIRED' && '● منتهي'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-500">
+                        {m.subscription?.plan === 'FREE' ? 'مجاني' :
+                         m.subscription?.plan === 'STANDARD' ? 'قياسي' :
+                         m.subscription?.plan === 'PRO' ? 'احترافي' : '—'}
+                      </td>
+                      <td className="px-5 py-4 text-xs text-gray-400">
+                        {m.createdAt ? new Date(m.createdAt).toLocaleDateString('ar-DZ') : '—'}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          {/* Preview */}
+                          <a href={`/store/${m.subdomain}`} target="_blank" rel="noopener noreferrer"
+                            className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition" title="معاينة">
+                            <Eye className="w-4 h-4" />
+                          </a>
+
+                          {/* Toggle active/suspend */}
+                          {isLoading ? (
+                            <div className="w-8 h-8 flex items-center justify-center">
+                              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            </div>
+                          ) : isSuspended ? (
+                            <button onClick={() => handleActivate(m.id)}
+                              className="w-8 h-8 rounded-xl bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition" title="تفعيل المتجر">
+                              <ToggleLeft className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button onClick={() => { setSuspendModal({ id: m.id, name: m.nameAr || m.name }); setSuspendReason(''); }}
+                              className="w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition" title="إيقاف المتجر">
+                              <ToggleRight className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{merchant.owner?.name || '—'}</div>
-                      <div className="text-sm text-gray-500">{merchant.owner?.email || '—'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          merchant.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-800'
-                            : merchant.status === 'TRIAL'
-                            ? 'bg-blue-100 text-blue-800'
-                            : merchant.status === 'SUSPENDED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {merchant.status === 'ACTIVE' && '✓ نشط'}
-                        {merchant.status === 'TRIAL' && '⏳ تجريبي'}
-                        {merchant.status === 'SUSPENDED' && '⛔ موقوف'}
-                        {merchant.status === 'EXPIRED' && '⏰ منتهي'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {merchant.subscription?.plan || 'بدون اشتراك'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(merchant.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => window.open(`/store/${merchant.subdomain}`, '_blank')}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="معاينة المتجر"
-                        >
-                          <Eye className="h-5 w-5" />
-                        </button>
-                        {merchant.status === 'SUSPENDED' ? (
-                          <button
-                            onClick={() => handleActivate(merchant.id)}
-                            className="text-green-600 hover:text-green-900"
-                            title="تفعيل"
-                          >
-                            <CheckCircle className="h-5 w-5" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleSuspend(merchant.id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="إيقاف"
-                          >
-                            <Ban className="h-5 w-5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* Suspend Modal */}
+      {suspendModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" dir="rtl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-extrabold text-gray-900">إيقاف المتجر</h3>
+              <button onClick={() => setSuspendModal(null)} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              هل أنت متأكد من إيقاف متجر <span className="font-bold text-gray-900">"{suspendModal.name}"</span>؟
+            </p>
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-600 mb-1.5">سبب الإيقاف *</label>
+              <textarea value={suspendReason} onChange={e => setSuspendReason(e.target.value)}
+                rows={3} placeholder="اكتب سبب الإيقاف..."
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setSuspendModal(null)}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition">
+                إلغاء
+              </button>
+              <button onClick={handleSuspend} disabled={!suspendReason.trim() || !!actionLoading}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
+                إيقاف المتجر
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
