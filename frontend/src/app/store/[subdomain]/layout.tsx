@@ -22,14 +22,10 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
           const newFavicon = response.data.favicon;
           const newStoreName = response.data.nameAr || response.data.name || storeId;
           
-          // Helper to strip HTML tags
-          const stripHtml = (html: string) => {
-            if (typeof window !== 'undefined') {
-              const tmp = document.createElement('DIV');
-              tmp.innerHTML = html;
-              return tmp.textContent || tmp.innerText || '';
-            }
-            return html.replace(/<[^>]*>/g, '');
+          // Helper to strip HTML tags (SSR-safe)
+          const stripHtml = (html: string): string => {
+            if (!html) return '';
+            return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim();
           };
           
           // Get clean description for meta/title
