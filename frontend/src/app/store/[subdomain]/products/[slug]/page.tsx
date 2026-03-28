@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import Image from 'next/image';
 import { useMemo } from 'react';
-import DOMPurify from 'isomorphic-dompurify';
 import LocationSelector from '@/components/LocationSelector';
 
 
@@ -142,7 +141,7 @@ export default function ProductDetailPage() {
   const safeDescription = useMemo(() => {
     const html = product?.descriptionAr || product?.description || '';
     try {
-      return DOMPurify.sanitize(html);
+      return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim();
     } catch {
       return html;
     }
