@@ -542,8 +542,37 @@ export class StorefrontService {
         };
       });
 
-      // Default shipping fee (can be customized per tenant later)
-      const shippingFee = new Prisma.Decimal(600);
+      // Calculate real shipping fee from tenant's shippingConfig
+      let shippingFeeNum = 600; // default fallback
+      try {
+        const tenantConfig = await this.prisma.tenant.findUnique({
+          where: { id: tenant.id },
+          select: { shippingConfig: true },
+        });
+        if (tenantConfig?.shippingConfig) {
+          const config = typeof tenantConfig.shippingConfig === 'string'
+            ? JSON.parse(tenantConfig.shippingConfig)
+            : tenantConfig.shippingConfig;
+          const wilayas = Array.isArray(config?.wilayas) ? config.wilayas : [];
+          // Find matching wilaya by name or code
+          const orderWilaya = orderData.wilaya?.trim() || '';
+          const matched = wilayas.find((w: any) =>
+            w?.wilayaName === orderWilaya ||
+            w?.wilayaCode === orderWilaya ||
+            String(w?.id) === orderWilaya
+          );
+          if (matched && matched.isActive !== false) {
+            // Use home delivery price by default (field names from merchant shipping page)
+            const fee = Number(matched.homeDeliveryPrice ?? matched.deskDeliveryPrice ?? 600);
+            if (Number.isFinite(fee) && fee >= 0) {
+              shippingFeeNum = fee;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[createOrder] Could not load shippingConfig, using default 600');
+      }
+      const shippingFee = new Prisma.Decimal(shippingFeeNum);
       const total = subtotal.add(shippingFee);
 
       // Validate Decimal values
@@ -735,4 +764,3 @@ export class StorefrontService {
     return field;
   }
 }
-
