@@ -9,6 +9,7 @@ interface LocationSelectorProps {
   onWilayaChange: (wilayaId: number, wilayaName: string) => void;
   onCommuneChange: (communeId: number, communeName: string, postalCode: string) => void;
   required?: boolean;
+  hideCommune?: boolean;
 }
 
 export default function LocationSelector({
@@ -16,14 +17,14 @@ export default function LocationSelector({
   selectedCommune,
   onWilayaChange,
   onCommuneChange,
-  required = false
+  required = false,
+  hideCommune = false,
 }: LocationSelectorProps) {
   const [communes, setCommunes] = useState<Commune[]>([]);
 
   useEffect(() => {
     if (selectedWilaya) {
-      const wilayaCommunes = getCommunesByWilaya(selectedWilaya);
-      setCommunes(wilayaCommunes);
+      setCommunes(getCommunesByWilaya(selectedWilaya));
     } else {
       setCommunes([]);
     }
@@ -35,7 +36,6 @@ export default function LocationSelector({
       const wilaya = ALGERIA_LOCATIONS.find(w => w.id === wilayaId);
       if (wilaya) {
         onWilayaChange(wilayaId, wilaya.nameAr);
-        // Reset commune selection
         onCommuneChange(0, '', '');
       }
     } else {
@@ -56,17 +56,17 @@ export default function LocationSelector({
     }
   };
 
+  const selectClass = "w-full px-3.5 py-2.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition bg-white";
+
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className={`grid gap-3 ${hideCommune ? 'grid-cols-1' : 'grid-cols-2'}`}>
+      {/* Wilaya */}
       <div>
-        <label className="block text-sm font-semibold mb-2">
-          الولاية {required && '*'}
-        </label>
         <select
           required={required}
           value={selectedWilaya || ''}
           onChange={handleWilayaChange}
-          className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className={selectClass}
         >
           <option value="">اختر الولاية</option>
           {ALGERIA_LOCATIONS.map((wilaya) => (
@@ -77,25 +77,25 @@ export default function LocationSelector({
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold mb-2">
-          البلدية {required && '*'}
-        </label>
-        <select
-          required={required}
-          value={selectedCommune || ''}
-          onChange={handleCommuneChange}
-          disabled={!selectedWilaya || communes.length === 0}
-          className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <option value="">اختر البلدية</option>
-          {communes.map((commune) => (
-            <option key={commune.id} value={commune.id}>
-              {commune.nameAr} ({commune.postalCode})
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Commune - hidden for office delivery */}
+      {!hideCommune && (
+        <div>
+          <select
+            required={required}
+            value={selectedCommune || ''}
+            onChange={handleCommuneChange}
+            disabled={!selectedWilaya || communes.length === 0}
+            className={`${selectClass} disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400`}
+          >
+            <option value="">اختر البلدية</option>
+            {communes.map((commune) => (
+              <option key={commune.id} value={commune.id}>
+                {commune.nameAr} ({commune.postalCode})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
